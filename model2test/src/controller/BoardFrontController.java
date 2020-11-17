@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import action.Action;
+import action.BoardListAction;
 import action.BoardWriteProAction;
 import vo.ActionForward;
 
@@ -41,6 +42,13 @@ public class BoardFrontController extends HttpServlet {
 			forward.setPath("/board/qna_board_write.jsp");
 		} else if(command.equals("/boardWritePro.do")) {
 			action = new BoardWriteProAction();
+			try {
+				forward = action.execute(request, response);
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+		} else if(command.equals("/boardList.do")) {
+			action = new BoardListAction();
 			try {
 				forward = action.execute(request, response);
 			} catch(Exception e) {
