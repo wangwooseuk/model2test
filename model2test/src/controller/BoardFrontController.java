@@ -10,7 +10,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import action.Action;
+import action.BoardDetailAction;
 import action.BoardListAction;
+import action.BoardReplyFormAction;
 import action.BoardWriteProAction;
 import vo.ActionForward;
 
@@ -33,9 +35,6 @@ public class BoardFrontController extends HttpServlet {
 		String command = RequestURI.substring(contextPath.length());
 		ActionForward forward = null;
 		Action action = null;
-		System.out.println(RequestURI);
-		System.out.println(contextPath);
-		System.out.println(command);
 		
 		if(command.equals("/boardWriteForm.do")) {
 			forward = new ActionForward();
@@ -49,6 +48,20 @@ public class BoardFrontController extends HttpServlet {
 			}
 		} else if(command.equals("/boardList.do")) {
 			action = new BoardListAction();
+			try {
+				forward = action.execute(request, response);
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+		} else if(command.equals("/boardDetail.do")) {
+			action = new BoardDetailAction();
+			try {
+				forward = action.execute(request, response);
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+		} else if(command.equals("/boardReplyForm.do")) {
+			action = new BoardReplyFormAction();
 			try {
 				forward = action.execute(request, response);
 			} catch(Exception e) {
