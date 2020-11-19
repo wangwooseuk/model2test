@@ -1,7 +1,6 @@
 package dao;
 
 import static db.JdbcUtil.*;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -162,7 +161,8 @@ public class BoardDAO {
 		}
 		return insertCount;
 	}
-
+	
+	//조회수 업데이트
 	public int updateReadCount(int board_num) {
 		PreparedStatement pstmt = null;
 		int updateCount = 0;
@@ -178,4 +178,124 @@ public class BoardDAO {
 		}
 		return updateCount;
 	}
+	
+	//글 답변
+	public int insertReplyArticle(BoardBean article) {
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		String board_max_sql = "select max(board_num) from board";
+		String sql = "";
+		int num = 0;
+		int insertCount = 0;
+		int re_ref = article.getBOARD_RE_REF();
+		int re_lev = article.getBOARD_RE_LEV();
+		int re_seq = article.getBOARD_RE_SEQ();
+		
+		try {
+			pstmt = con.prepareStatement(board_max_sql);
+			rs = pstmt.executeQuery();
+			if(rs.next()) num = rs.getInt(1) + 1;
+			else num = 1;
+			sql = "update board set BOARD_RE_SEQ = BOARD_RE_SEQ + 1 where BOARD_RE_REF = ? and BOARD_RE_SEQ > ?";
+			pstmt = con.prepareStatement(sql);
+			pstmt.setInt(1, re_ref);
+			pstmt.setInt(2, re_seq);
+			int updateCount = pstmt.executeUpdate();
+			
+			if(updateCount > 0) {
+				commit(con);
+			}
+			
+			re_seq = re_seq + 1;
+			re_lev = re_lev + 1;
+//			sql = "insert into board (BOARD_NUM, BOARD_NAME, BOARD_PASS, BOARD_SUBJECT,";
+//			sql += "BOARD_CONTENT, BOARD_FILE, BOARD_RE_REF, BOARD_RE_LEV, BOARD_RE_SEQ,";
+//			sql += "BOARD_READCOUNT, BOARD_DATE) values (?,?,?,?,?,?,?,?,?,?, now())";
+			sql = "insert into board values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())";
+			
+			pstmt = con.prepareStatement(sql);
+			pstmt.setInt(1, num);
+			pstmt.setString(2, article.getBOARD_NAME());
+			pstmt.setString(3, article.getBOARD_PASS());
+			pstmt.setString(4, article.getBOARD_SUBJECT());
+			pstmt.setString(5, article.getBOARD_CONTENT());
+			pstmt.setString(6, ""); //답장에는 파일을 업로드하지않음.
+			pstmt.setInt(7, re_ref);
+			pstmt.setInt(8, re_lev);
+			pstmt.setInt(9, re_seq);
+			pstmt.setInt(10, 0);
+			
+			insertCount = pstmt.executeUpdate();
+		} catch(Exception ex) {
+			System.out.println("boardReply 에러: " + ex);
+		} finally {
+			close(rs);
+			close(pstmt);
+		}
+		return insertCount;
+	}
+	
+	//글 수정
+	public int updateArticle(BoardBean article) {
+		int updateCount = 0;
+		PreparedStatement pstmt = null;
+		String sql = "update board set BOARD_SUBJECT = ?, BOARD_CONTENT = ? where BOARD_NUM = ?";
+		
+		try {
+			pstmt = con.prepareStatement(sql);
+			pstmt.setString(1, article.getBOARD_SUBJECT());
+			pstmt.setString(2, article.getBOARD_CONTENT());
+			pstmt.setInt(3, article.getBOARD_NUM());
+			updateCount = pstmt.executeUpdate();
+		} catch(Exception ex) {
+			System.out.println("boardModify 에러 : " + ex);
+		} finally {
+			close(pstmt);
+		}
+		return updateCount;
+	}
+	
+	//글쓴이인지 확인
+	public boolean isArticleBoardWriter(int board_num, String pass) {
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		String board_sql = "select BOARD_PASS from board where BOARD_NUM = ?";
+		boolean isWriter = false;
+		
+		try {
+			pstmt = con.prepareStatement(board_sql);
+			pstmt.setInt(1, board_num);
+			rs = pstmt.executeQuery();
+			
+			if(rs.next()) {
+				if(pass.equals(rs.getString("BOARD_PASS"))) {
+					isWriter = true;
+				}
+			}
+		} catch(Exception ex) {
+			System.out.println("isBoardWriter 에러 : " + ex);
+		} finally {
+			close(pstmt);
+		}
+		return isWriter;
+	}
+	
+	//글 삭제
+	public int deleteArticle(int board_num) {
+		PreparedStatement pstmt = null;
+		String board_delete_sql = "delete from board where BOARD_num = ?";
+		int deleteCount = 0;
+		
+		try {
+			pstmt = con.prepareStatement(board_delete_sql);
+			pstmt.setInt(1, board_num);
+			deleteCount = pstmt.executeUpdate();
+		} catch(Exception ex) {
+			System.out.println("boardDelete 에러 : " + ex);
+		} finally {
+			close(pstmt);
+		}
+		return deleteCount;
+	}
+	
 }
